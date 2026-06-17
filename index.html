@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stasiun Bit — Generator Topik &amp; Pomodoro Nulis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Mono:wght@400;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#003049;
+    --navy-deep:#00202f;
+    --crimson:#c1121f;
+    --crimson-dark:#9c0e19;
+    --cream:#fdf0d5;
+    --steel:#669bbc;
+    --maroon:#780000;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--navy);
+    background-image:radial-gradient(ellipse at top, rgba(102,155,188,0.10), transparent 60%);
+    color:var(--cream);
+    font-family:'Plus Jakarta Sans', sans-serif;
+    line-height:1.5;
+  }
+  .wrap{max-width:920px;margin:0 auto;padding:0 20px;}
+
+  /* ---- perforation divider, the ticket motif used throughout ---- */
+  .perforation{
+    height:16px;
+    background-color:var(--crimson);
+    background-image:radial-gradient(circle, var(--navy) 0 5px, transparent 6px);
+    background-size:22px 16px;
+    background-position:center;
+    margin:0;
+  }
+
+  /* ---- header ---- */
+  header{padding:28px 0 0;}
+  .eyebrow{
+    font-family:'Space Mono', monospace;
+    font-size:0.72rem;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color:var(--steel);
+  }
+  .hero{padding:8px 0 30px;animation:fadeUp 0.6s ease both;}
+  h1.title{
+    font-family:'Anton', sans-serif;
+    font-size:clamp(2.6rem, 9vw, 5rem);
+    line-height:0.95;
+    margin:6px 0 14px;
+    letter-spacing:0.01em;
+    color:var(--cream);
+  }
+  .subtitle{
+    font-size:clamp(1rem, 2.4vw, 1.18rem);
+    color:rgba(253,240,213,0.85);
+    max-width:560px;
+    margin:0 0 22px;
+  }
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  @media (prefers-reduced-motion: reduce){ .hero{animation:none;} }
+
+  section{padding:38px 0;}
+  .section-head{margin-bottom:18px;}
+  h2.section-title{
+    font-family:'Anton', sans-serif;
+    font-size:clamp(1.5rem, 4vw, 2.1rem);
+    margin:4px 0 6px;
+    letter-spacing:0.01em;
+  }
+  .section-desc{color:rgba(253,240,213,0.75);font-size:0.96rem;max-width:560px;margin:0;}
+
+  /* ---- filter chips ---- */
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0;}
+  .chip{
+    font-family:'Space Mono', monospace;
+    font-size:0.78rem;
+    letter-spacing:0.03em;
+    text-transform:uppercase;
+    padding:8px 14px;
+    border-radius:999px;
+    border:1.5px solid var(--steel);
+    background:transparent;
+    color:var(--cream);
+    cursor:pointer;
+    transition:background 0.15s, color 0.15s, border-color 0.15s;
+  }
+  .chip:hover{border-color:var(--cream);}
+  .chip.active{background:var(--crimson);border-color:var(--crimson);color:var(--cream);}
+  .chip:focus-visible{outline:2px solid var(--cream);outline-offset:2px;}
+
+  /* ---- departure board (signature element) ---- */
+  .board{
+    border:3px solid var(--maroon);
+    background:var(--navy-deep);
+    border-radius:4px;
+    padding:0;
+    overflow:hidden;
+    box-shadow:0 10px 30px rgba(0,0,0,0.35);
+  }
+  .board-bar{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:10px 18px;
+    background:var(--maroon);
+    font-family:'Space Mono', monospace;
+    font-size:0.72rem;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--cream);
+  }
+  .board-row{
+    padding:30px 22px 26px;
+    perspective:800px;
+  }
+  .board-row.flip .row-inner{animation:flipCard 0.18s linear;}
+  @keyframes flipCard{
+    0%{transform:rotateX(0deg);}
+    50%{transform:rotateX(-90deg);}
+    100%{transform:rotateX(0deg);}
+  }
+  .row-topic{
+    font-size:clamp(1.15rem, 3.4vw, 1.6rem);
+    font-weight:700;
+    color:var(--cream);
+    min-height:2.6em;
+  }
+  .row-meta{
+    margin-top:10px;
+    font-family:'Space Mono', monospace;
+    font-size:0.78rem;
+    letter-spacing:0.08em;
+    color:var(--steel);
+    text-transform:uppercase;
+  }
+  .spin-btn{
+    display:block;
+    width:100%;
+    border:none;
+    padding:18px;
+    font-family:'Anton', sans-serif;
+    font-size:clamp(1.1rem, 3vw, 1.4rem);
+    letter-spacing:0.04em;
+    background:var(--crimson);
+    color:var(--cream);
+    cursor:pointer;
+    transition:background 0.15s;
+  }
+  .spin-btn:hover:not(:disabled){background:var(--crimson-dark);}
+  .spin-btn:disabled{cursor:default;opacity:0.85;}
+  .spin-btn:focus-visible{outline:3px solid var(--cream);outline-offset:-5px;}
+
+  /* ---- ticket / landed card ---- */
+  .ticket{
+    margin-top:22px;
+    background:var(--cream);
+    color:var(--navy);
+    border-radius:4px;
+    display:none;
+    overflow:hidden;
+    box-shadow:0 10px 24px rgba(0,0,0,0.3);
+    animation:fadeUp 0.4s ease both;
+  }
+  .ticket.show{display:flex;flex-direction:column;}
+  .ticket-top{
+    padding:18px 22px 6px;
+    display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;
+  }
+  .ticket-label{
+    font-family:'Space Mono', monospace;
+    font-size:0.72rem;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--maroon);
+  }
+  .ticket-code{
+    font-family:'Space Mono', monospace;
+    font-size:0.78rem;
+    color:var(--navy);
+    opacity:0.65;
+  }
+  .ticket-topic{
+    padding:6px 22px 14px;
+    font-size:clamp(1.25rem, 3.4vw, 1.7rem);
+    font-weight:800;
+    line-height:1.28;
+  }
+  .ticket-badge{
+    display:inline-block;
+    margin:0 22px 18px;
+    align-self:flex-start;
+    background:var(--crimson);
+    color:var(--cream);
+    font-family:'Space Mono', monospace;
+    font-size:0.72rem;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    padding:6px 12px;
+    border-radius:999px;
+  }
+  .ticket-actions{
+    display:flex;gap:10px;flex-wrap:wrap;
+    border-top:2px dashed rgba(0,48,73,0.3);
+    padding:16px 22px 20px;
+  }
+  .btn{
+    font-family:'Plus Jakarta Sans', sans-serif;
+    font-weight:700;
+    font-size:0.95rem;
+    padding:11px 18px;
+    border-radius:4px;
+    border:1.5px solid var(--navy);
+    cursor:pointer;
+    background:transparent;
+    color:var(--navy);
+    transition:background 0.15s, color 0.15s;
+  }
+  .btn:focus-visible{outline:3px solid var(--maroon);outline-offset:1px;}
+  .btn-primary{background:var(--navy);color:var(--cream);}
+  .btn-primary:hover{background:var(--navy-deep);}
+  .btn-ghost:hover{background:rgba(0,48,73,0.08);}
+
+  /* ---- timer panel ---- */
+  .panel{
+    border:3px solid var(--maroon);
+    background:var(--navy-deep);
+    border-radius:4px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.35);
+  }
+  .pinned-topic{
+    padding:14px 20px;
+    background:rgba(102,155,188,0.12);
+    border-bottom:1px solid rgba(102,155,188,0.3);
+    font-size:0.92rem;
+    color:rgba(253,240,213,0.9);
+  }
+  .pinned-topic b{color:var(--cream);}
+  .panel-body{padding:30px 22px;text-align:center;}
+  .phase-label{
+    font-family:'Anton', sans-serif;
+    font-size:clamp(1.1rem, 3vw, 1.5rem);
+    letter-spacing:0.06em;
+    color:var(--crimson);
+    transition:color 0.2s;
+  }
+  .panel.phase-break .phase-label{color:var(--steel);}
+  .timer-display{
+    position:relative;
+    font-family:'Space Mono', monospace;
+    font-weight:700;
+    font-size:clamp(3.4rem, 16vw, 6.5rem);
+    letter-spacing:0.02em;
+    margin:6px 0 18px;
+    line-height:1;
+  }
+  .timer-display::after{
+    content:"";
+    position:absolute;
+    left:8%;right:8%;top:50%;
+    height:2px;
+    background:rgba(0,48,73,0.6);
+    transform:translateY(-1px);
+  }
+  .controls{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:24px;}
+  .ctrl-btn{
+    font-family:'Plus Jakarta Sans', sans-serif;
+    font-weight:700;
+    font-size:0.92rem;
+    padding:11px 20px;
+    border-radius:4px;
+    border:1.5px solid var(--steel);
+    background:transparent;
+    color:var(--cream);
+    cursor:pointer;
+    transition:background 0.15s;
+  }
+  .ctrl-btn:hover{background:rgba(102,155,188,0.15);}
+  .ctrl-btn.primary{background:var(--crimson);border-color:var(--crimson);}
+  .ctrl-btn.primary:hover{background:var(--crimson-dark);}
+  .ctrl-btn:focus-visible{outline:2px solid var(--cream);outline-offset:2px;}
+
+  .duration-row{margin:18px 0;text-align:left;}
+  .duration-label{
+    font-family:'Space Mono', monospace;
+    font-size:0.72rem;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--steel);
+    margin-bottom:8px;
+  }
+  .duration-chips{display:flex;gap:8px;flex-wrap:wrap;}
+  .dur-chip{
+    font-family:'Space Mono', monospace;
+    font-size:0.8rem;
+    padding:7px 13px;
+    border-radius:999px;
+    border:1.5px solid var(--steel);
+    background:transparent;
+    color:var(--cream);
+    cursor:pointer;
+  }
+  .dur-chip.active{background:var(--steel);border-color:var(--steel);color:var(--navy-deep);}
+
+  .cycles-row{margin-top:22px;text-align:left;}
+  .cycles-label{font-size:0.85rem;color:rgba(253,240,213,0.75);margin-bottom:8px;}
+  .cycles-row b{color:var(--cream);}
+  .cycle-dots{display:flex;gap:5px;flex-wrap:wrap;}
+  .cycle-dot{width:16px;height:10px;border-radius:2px;border:1.5px dashed var(--steel);}
+  .cycle-dot.done{background:var(--crimson);border-color:var(--crimson);}
+
+  footer{padding:32px 0 50px;text-align:center;}
+  .footer-note{font-size:0.95rem;color:rgba(253,240,213,0.85);margin:18px 0 6px;}
+  .footer-sub{font-size:0.82rem;color:rgba(253,240,213,0.55);}
+
+  @media (max-width:520px){
+    .board-row{padding:24px 16px 20px;}
+    .panel-body{padding:24px 16px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Loket Penulisan Harian</div>
+  </header>
+
+  <div class="hero wrap" style="padding-left:0;padding-right:0;">
+    <h1 class="title">STASIUN BIT</h1>
+    <p class="subtitle">Papan topik buat komika yang mau nulis tiap hari. Tarik topik, atur waktu, naik kereta materi.</p>
+  </div>
+</div>
+
+<div class="perforation" role="presentation"></div>
+
+<div class="wrap">
+  <section id="board-section">
+    <div class="section-head">
+      <div class="eyebrow">Papan Topik</div>
+      <h2 class="section-title">Tarik Topik Hari Ini</h2>
+      <p class="section-desc">Pilih jurusan kalau mau lebih spesifik, atau biarkan papan nentuin sendiri.</p>
+    </div>
+
+    <div class="chips" id="chipRow" role="group" aria-label="Filter jurusan topik"></div>
+
+    <div class="board">
+      <div class="board-bar">
+        <span>Papan Keberangkatan</span>
+        <span id="poolCount">— topik</span>
+      </div>
+      <div class="board-row" id="boardRow">
+        <div class="row-inner">
+          <div class="row-topic" id="rowTopic" aria-live="polite">Tarik papan buat dapet topik pertamamu</div>
+          <div class="row-meta" id="rowMeta">— · MENUNGGU</div>
+        </div>
+      </div>
+      <button class="spin-btn" id="spinBtn">ACAK TOPIK</button>
+    </div>
+
+    <div class="ticket" id="ticket">
+      <div class="ticket-top">
+        <span class="ticket-label">Tiket Berangkat</span>
+        <span class="ticket-code" id="ticketCode">No. KA-000</span>
+      </div>
+      <div class="ticket-topic" id="ticketTopic"></div>
+      <span class="ticket-badge" id="ticketBadge"></span>
+      <div class="ticket-actions">
+        <button class="btn btn-primary" id="goWriteBtn">Mulai Nulis Topik Ini</button>
+        <button class="btn btn-ghost" id="reSpinBtn">Topik Lain</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="perforation" role="presentation"></div>
+
+<div class="wrap">
+  <section id="timer-section">
+    <div class="section-head">
+      <div class="eyebrow">Ruang Tunggu</div>
+      <h2 class="section-title">Waktunya Naik</h2>
+      <p class="section-desc">Tulis sampai peluit berbunyi, istirahat sebentar, ulangi.</p>
+    </div>
+
+    <div class="panel" id="panel">
+      <div class="pinned-topic" id="pinnedTopic">Belum ada topik — tarik papan dulu di atas.</div>
+      <div class="panel-body">
+        <div class="phase-label" id="phaseLabel">SEDANG MENULIS</div>
+        <div class="timer-display" id="timeDisplay">25:00</div>
+
+        <div class="controls">
+          <button class="ctrl-btn primary" id="startBtn">Mulai</button>
+          <button class="ctrl-btn" id="resetBtn">Ulang</button>
+          <button class="ctrl-btn" id="skipBtn">Lewati Sesi</button>
+        </div>
+
+        <div class="duration-row">
+          <div class="duration-label">Durasi Nulis</div>
+          <div class="duration-chips" id="writeChips">
+            <button class="dur-chip" data-min="15">15 Menit</button>
+            <button class="dur-chip active" data-min="25">25 Menit</button>
+            <button class="dur-chip" data-min="45">45 Menit</button>
+          </div>
+        </div>
+
+        <div class="duration-row">
+          <div class="duration-label">Durasi Istirahat</div>
+          <div class="duration-chips" id="breakChips">
+            <button class="dur-chip active" data-min="5">5 Menit</button>
+            <button class="dur-chip" data-min="10">10 Menit</button>
+            <button class="dur-chip" data-min="15">15 Menit</button>
+          </div>
+        </div>
+
+        <div class="cycles-row">
+          <div class="cycles-label">Sesi nulis selesai hari ini: <b id="cycleCount">0</b></div>
+          <div class="cycle-dots" id="cycleDots"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="perforation" role="presentation"></div>
+
+<footer class="wrap">
+  <p class="footer-note">Materi bagus jarang lahir dari draft pertama. Tulis aja dulu.</p>
+  <p class="footer-sub"><span id="topicCount">0</span> topik siap diacak, dari kesehatan sampai sospol, biar nggak gampang bosen.</p>
+</footer>
+
+<script>
+/* ============ DATA TOPIK ============ */
+const TOPICS = [
+['BPJS antrian yang lebih panjang dari skripsimu yang belum kelar','Kesehatan'],
+['Obat warung yang dosisnya ditentukan feeling, bukan resep dokter','Kesehatan'],
+['Air hangat yang dipercaya bisa nyembuhin segala macam masalah hidup','Kesehatan'],
+['Puskesmas yang jam bukanya misterius kayak jam gaib','Kesehatan'],
+['Posyandu yang ibu-ibunya lebih update gosip daripada timbangan balita','Kesehatan'],
+['Jamu pahit yang dipercaya manjur karena rasanya aja udah nyiksa','Kesehatan'],
+['Cek tensi di apotek yang bikin deg-degan duluan sebelum dicek','Kesehatan'],
+['Minyak kayu putih yang jadi obat segala penyakit dari pusing sampai patah hati','Kesehatan'],
+['Kerokan yang sakitnya healing buat sebagian orang','Kesehatan'],
+['Vitamin yang diminum cuma pas lagi flu, lupa lagi pas sehat','Kesehatan'],
+['Dokter yang resepnya cuma istirahat yang cukup padahal kerjaan numpuk','Kesehatan'],
+['Antrian rumah sakit yang bikin yang sehat jadi stres duluan','Kesehatan'],
+['Obat generik yang khasiatnya sama tapi dianggap kurang ampuh','Kesehatan'],
+['Tukang pijat kampung yang lebih dipercaya dari hasil rontgen','Kesehatan'],
+['GERD anak muda yang penyebabnya bukan makanan tapi deadline','Kesehatan'],
+['Cek kolesterol yang hasilnya bikin nyesel makan gorengan kemarin','Kesehatan'],
+['Mitos pantangan makanan dari nenek yang nggak ada di buku kedokteran manapun','Kesehatan'],
+['Sakit gigi yang baru ke dokter pas udah nggak bisa ditahan lagi','Kesehatan'],
+
+['Restu orang tua yang harus didapat sebelum restu hati sendiri','Cinta & Asmara'],
+['Mas kawin yang dibahas lebih detail daripada perasaan calon mempelai','Cinta & Asmara'],
+['LDR antar pulau yang ongkos pulangnya lebih mahal dari cincin kawin','Cinta & Asmara'],
+['Chat satu huruf p doang yang bikin overthinking semalaman','Cinta & Asmara'],
+['Ditanya kapan nikah di acara keluarga yang lebih nyesek dari putus cinta','Cinta & Asmara'],
+['Baper sama mantan yang nge-react story padahal udah move on katanya','Cinta & Asmara'],
+['Pacaran yang direstui asal kerjanya PNS atau punya sawah','Cinta & Asmara'],
+['Nembak orang lewat DM yang dibalas typing terus ilang','Cinta & Asmara'],
+['Putus karena beda kota yang disalahin ke jarak padahal emang udah nggak cocok','Cinta & Asmara'],
+['Dijodohin sama anak temen ortu yang baru kenal lima menit','Cinta & Asmara'],
+['Mantan yang tiba-tiba nge-like foto lama jam tiga pagi','Cinta & Asmara'],
+['Diomongin nikah duluan padahal pacaran aja belum','Cinta & Asmara'],
+['Gombalan lokal yang receh tapi tetap bikin ketawa','Cinta & Asmara'],
+['Pacar yang lebih cemburu sama ponsel daripada sama orang lain','Cinta & Asmara'],
+['Nikah muda yang dipuji sekaligus dikhawatirin bareng-bareng','Cinta & Asmara'],
+['Cinta lokasi pas KKN yang lebih nempel dari materi penyuluhannya','Cinta & Asmara'],
+['Status available di aplikasi chat yang nggak ngubah apa-apa di kehidupan nyata','Cinta & Asmara'],
+['Dilema modal nikah yang lebih mikirin gedung daripada masa depan','Cinta & Asmara'],
+
+['FYP TikTok yang lebih ngerti isi hatimu daripada keluarga sendiri','Sosial Media'],
+['Story WhatsApp yang di-screenshot demi jadi bukti di pengadilan hati','Sosial Media'],
+['Grup WhatsApp keluarga yang isinya broadcast hoax tiap pagi','Sosial Media'],
+['War komentar di Instagram pejabat yang nggak ada habisnya','Sosial Media'],
+['Caption panjang yang nggak ada yang baca sampai abis','Sosial Media'],
+['Story OOTD yang lebih sering diupload daripada acara pentingnya','Sosial Media'],
+['Komentar julid warganet yang lebih pedas dari sambal rumahan','Sosial Media'],
+['Update status sedang berduka yang baru dipos sejam setelah kejadian','Sosial Media'],
+['Stalking media sosial gebetan yang udah kayak riset skripsi','Sosial Media'],
+['Filter wajah yang bikin nggak nyambung sama muka asli di KTP','Sosial Media'],
+['Konten story telling receh yang viral lebih cepat dari berita penting','Sosial Media'],
+['Reels masak yang hasil aslinya nggak pernah semulus videonya','Sosial Media'],
+['Trending topic yang ganti topik secepat ganti channel TV','Sosial Media'],
+['DM halo kak boleh nanya yang ujungnya promosi MLM','Sosial Media'],
+['Live jualan TikTok yang host-nya semangat walau penonton dikit','Sosial Media'],
+['Notifikasi lihat siapa yang nonton story yang bikin penasaran setengah mati','Sosial Media'],
+['Konten prank yang lebih banyak settingannya daripada kejadian aslinya','Sosial Media'],
+['Komentar izin save yang nggak pernah ditonton lagi abis disave','Sosial Media'],
+
+['Baliho caleg yang fotonya jauh lebih ganteng dari aslinya','Sosial Politik'],
+['Debat di warung kopi yang lebih sengit dari debat capres','Sosial Politik'],
+['Spanduk razia yang isinya peringatan tapi tetap aja dilanggar','Sosial Politik'],
+['Pilkades yang persaingannya lebih panas dari pilpres','Sosial Politik'],
+['Janji kampanye yang umurnya cuma sampai hari pelantikan','Sosial Politik'],
+['Sembako gratis musim kampanye yang tiba-tiba hilang abis pemilu','Sosial Politik'],
+['Demo yang yel-yelnya lebih hafal daripada isi undang-undangnya','Sosial Politik'],
+['Kotak amal pembangunan masjid yang keliling tiap minggu nggak pernah kelar bangunnya','Sosial Politik'],
+['Survei elektabilitas yang hasilnya beda-beda tapi dipercaya semua orang','Sosial Politik'],
+['Bansos yang datanya kadang nyasar ke yang nggak butuh','Sosial Politik'],
+['Sidang DPR yang acara tidurnya viral lebih dulu dari rancangan undang-undangnya','Sosial Politik'],
+['Mural protes yang dihapus duluan sebelum sempat dibaca rame-rame','Sosial Politik'],
+['Iklan layanan masyarakat yang nasihatnya bagus tapi nggak ada yang nurut','Sosial Politik'],
+['Acara dialog rakyat yang pertanyaannya udah disetting dari panggung','Sosial Politik'],
+['Harga BBM naik yang disambut meme duluan sebelum disambut aksi','Sosial Politik'],
+['Partai baru yang jargonnya beda tapi mukanya itu-itu aja','Sosial Politik'],
+['Rapat RT yang lebih ribut soal kas daripada soal keamanan kampung','Sosial Politik'],
+['Aparat yang lebih sigap pas ada kamera daripada pas nggak ada','Sosial Politik'],
+
+['Pertanyaan kapan nikah yang lebih nyesek dari putus cinta beneran','Keluarga'],
+['Mudik yang macetnya udah jadi tradisi tahunan sendiri','Keluarga'],
+['Kondangan yang nominal angpaonya dihitung sama yang nyumbang','Keluarga'],
+['Kumpul keluarga yang ujungnya bandingin anak siapa lebih sukses','Keluarga'],
+['Sungkeman lebaran yang isinya nangis padahal nggak ada yang salah','Keluarga'],
+['Om yang nanya kerjaan tapi nggak pernah dengar jawabannya','Keluarga'],
+['Adik yang dibandingin terus sama kakak walau udah sama-sama gede','Keluarga'],
+['Acara arisan keluarga yang gosipnya lebih update dari berita TV','Keluarga'],
+['Ortu yang masih nganggep anaknya bocah walau udah punya KTP','Keluarga'],
+['Warisan yang dibagi lebih ribut daripada pemilihan ketua RT','Keluarga'],
+['Anak bungsu yang dibebasin tapi tetap kena ceramah paling panjang','Keluarga'],
+['THR yang udah direncanain habis sebelum sempat masuk rekening','Keluarga'],
+['Foto keluarga lebaran yang formasinya makin susah tiap tahun','Keluarga'],
+['Sepupu yang ketemu setahun sekali tapi langsung nyamber kabar terbaru','Keluarga'],
+['Kakak-adik yang rebutan remote TV tapi ujungnya nggak ada yang nonton juga','Keluarga'],
+['Nenek yang resep masakannya nggak pernah ditulis tapi selalu pas','Keluarga'],
+['Anak rantau yang kabarnya cuma lancar pas minta uang','Keluarga'],
+['Telpon orang tua yang isinya cuma nanya udah makan belum','Keluarga'],
+
+['Teman yang baru chat kalau lagi butuh doang','Pertemanan'],
+['Rencana reunian yang direncanain tiap tahun tapi nggak pernah kejadian','Pertemanan'],
+['Teman yang lebih update kabar lewat story daripada chat langsung','Pertemanan'],
+['Grup pertemanan yang paling aktif justru pas lagi ngerumpiin yang nggak ada di grup','Pertemanan'],
+['Teman lama yang baru nongol pas lagi jualan produk MLM','Pertemanan'],
+['Janji nanti aku traktir yang nggak pernah ditagih beneran','Pertemanan'],
+['Sahabat yang lebih jujur soal kekuranganmu daripada diri sendiri','Pertemanan'],
+['Circle pertemanan yang makin kecil makin berkualitas, katanya','Pertemanan'],
+['Teman kerja yang jadi keluarga kedua tapi nggak diundang ke acara keluarga','Pertemanan'],
+['Pertemanan yang renggang gara-gara beda circle, bukan gara-gara masalah','Pertemanan'],
+['Teman yang traktir tapi pas dihitung minta split bill juga','Pertemanan'],
+['Curhat ke teman yang ujungnya malah dia yang curhat duluan','Pertemanan'],
+['Teman SD yang ketemu lagi udah beda banget arah hidupnya','Pertemanan'],
+['Teman deket yang baru sadar ulang tahunnya lupa gara-gara notif Facebook','Pertemanan'],
+
+['Freelance yang dibayar pakai alasan exposure doang','Pekerjaan & Karier'],
+['Atasan yang bilang sudah seperti keluarga tapi nggak transparan soal gaji','Pekerjaan & Karier'],
+['WFH yang jam kerjanya malah lebih panjang dari WFO','Pekerjaan & Karier'],
+['Magang yang kerjanya udah kayak karyawan tapi gajinya kayak relawan','Pekerjaan & Karier'],
+['Driver ojol yang lebih sabar dari psikolog','Pekerjaan & Karier'],
+['Interview kerja yang ditanya soal kelemahan tapi jawabannya harus kedengeran kayak kelebihan','Pekerjaan & Karier'],
+['Lembur tanpa uang lembur yang dibalas ucapan terima kasih doang','Pekerjaan & Karier'],
+['Kerja remote yang rapatnya malah lebih banyak dari kerja kantoran','Pekerjaan & Karier'],
+['CV yang isinya soft skill semua tapi nggak ada yang bisa dibuktiin','Pekerjaan & Karier'],
+['Resign yang alasan formalnya pengembangan diri padahal capek sama bos','Pekerjaan & Karier'],
+['Gaji UMR yang naiknya nggak secepat naiknya harga cabai','Pekerjaan & Karier'],
+['Bos yang baru perhatian pas deadline mepet','Pekerjaan & Karier'],
+['Kerja serabutan yang lebih fleksibel waktunya tapi lebih nggak jelas masa depannya','Pekerjaan & Karier'],
+['Job desk di kontrak yang beda sama yang dikerjain sehari-hari','Pekerjaan & Karier'],
+['Rapat evaluasi yang isinya cuma nyalahin tanpa solusi','Pekerjaan & Karier'],
+['Probation tiga bulan yang berasa kayak audisi nggak ada habisnya','Pekerjaan & Karier'],
+['Promosi jabatan yang dijanjiin tapi nggak pernah direalisasiin','Pekerjaan & Karier'],
+['Slip gaji yang potongannya lebih banyak daripada yang diterima','Pekerjaan & Karier'],
+
+['Skripsi yang dosen pembimbingnya susah ditemui dari Tuhan sekalipun','Pendidikan'],
+['Ujian yang dihapus tapi traumanya nggak ikut dihapus','Pendidikan'],
+['Anak sekolah yang hafal sejarah tapi nggak hafal nomor HP ortu','Pendidikan'],
+['Tugas kelompok yang kerjanya cuma ditanggung satu dua orang','Pendidikan'],
+['Sekolah yang nilai sopan santunnya tinggi tapi nilai matematikanya pas-pasan','Pendidikan'],
+['Wisuda yang lebih heboh daripada lulusnya itu sendiri','Pendidikan'],
+['Les tambahan yang niatnya nambah ilmu tapi nambah ngantuk juga','Pendidikan'],
+['Soal ujian yang nggak pernah diajarin pas di kelas','Pendidikan'],
+['Anak kos yang belajar hidup mandiri lebih cepat dari belajar mata kuliah','Pendidikan'],
+['Beasiswa yang syaratnya lebih ribet dari isi laporan keuangan negara','Pendidikan'],
+['Guru BK yang lebih sering manggil daripada manggil orang tua','Pendidikan'],
+['PR yang dikerjain di angkot menuju sekolah','Pendidikan'],
+['Mata kuliah daring yang kameranya off semua tapi tetap dianggap hadir','Pendidikan'],
+['Sidang skripsi yang pertanyaannya cuma satu tapi jawabannya bisa setengah jam','Pendidikan'],
+
+['Pedas level lima yang dipesan demi gaya doang','Makanan'],
+['Indomie yang jadi obat segala masalah hidup anak kos','Makanan'],
+['Sambal yang levelnya beda tiap rumah tapi semua ngaku paling enak','Makanan'],
+['Warteg yang sistem bayarnya pakai kepercayaan tapi tetap dihitung pas','Makanan'],
+['Gorengan yang harganya naik tapi ukurannya makin kecil','Makanan'],
+['Nasi padang yang harganya baru ketahuan pas piring udah penuh','Makanan'],
+['Tukang bakso keliling yang teriakannya hafal di luar kepala satu kampung','Makanan'],
+['Kerupuk yang jadi pelengkap wajib walau nggak ada di menu','Makanan'],
+['Es teh manis yang jadi obat penenang segala suasana hati','Makanan'],
+['Makan di angkringan yang lebih ramai obrolannya daripada menunya','Makanan'],
+['Sarapan nasi kucing yang porsinya kecil tapi cukup buat ngumpul lama','Makanan'],
+['Lauk yang dihitung belakangan biar nggak mengurangi nafsu makan','Makanan'],
+['Cabai yang harganya naik bisa jadi topik nasional sendiri','Makanan'],
+['Jajanan pasar yang manisnya nggak ketulungan tapi tetep diborong','Makanan'],
+['Mie ayam yang porsinya beda tiap abang penjual walau harga sama','Makanan'],
+['Mukbang konten makan yang porsinya nggak masuk akal buat sekali makan','Makanan'],
+['Buka puasa yang menunya banyak tapi yang dimakan cuma sedikit','Makanan'],
+['Sate yang tusuknya dihitung diam-diam sama yang jualan','Makanan'],
+
+['Angkot ngetem yang waktu tunggunya lebih lama dari waktu jalannya','Transportasi'],
+['Macet Jakarta yang udah jadi destinasi wisata tahan sabar','Transportasi'],
+['Motor yang fungsinya lebih banyak daripada pisau lipat serbaguna','Transportasi'],
+['Kereta ekonomi yang obrolan penumpangnya lebih seru dari podcast','Transportasi'],
+['Ojol yang hafal jalan tikus lebih jago daripada hafal jalan utama','Transportasi'],
+['Bus malam yang AC-nya dingin banget kayak kulkas berjalan','Transportasi'],
+['Klakson yang jadi bahasa pergaulan tersendiri di jalanan','Transportasi'],
+['Parkir liar yang tarifnya nggak tertulis tapi semua orang tahu','Transportasi'],
+['Macet karena hajatan yang nutup setengah jalan kampung','Transportasi'],
+['Travel antar kota yang jam berangkatnya fleksibel alias ngaret','Transportasi'],
+['Pengendara yang nyalain sein tapi beloknya ke arah sebaliknya','Transportasi'],
+['Sopir angkutan umum yang hafal lagu dangdut satu album penuh','Transportasi'],
+['Jalan rusak yang malah jadi ciri khas suatu daerah','Transportasi'],
+['Helm yang dipakai cuma buat formalitas pas ada razia','Transportasi'],
+
+['Gaji yang habis sebelum tanggal gajian berikutnya datang','Uang & Ekonomi'],
+['Diskon gede yang ujungnya belanja lebih banyak dari rencana awal','Uang & Ekonomi'],
+['PayLater yang bikin miskin masa depan demi senang masa kini','Uang & Ekonomi'],
+['Tabungan yang niatnya buat darurat tapi kepake buat jajan','Uang & Ekonomi'],
+['Kredit motor yang cicilannya lebih awet dari hubungan rumah tangga sebagian orang','Uang & Ekonomi'],
+['Investasi bodong yang janjinya untung gede tapi modal lenyap','Uang & Ekonomi'],
+['THR yang habis cuma buat bayar utang lebaran tahun lalu','Uang & Ekonomi'],
+['Harga cabai yang lebih fluktuatif dari nilai tukar rupiah','Uang & Ekonomi'],
+['Belanja online checkout tengah malam yang nyesel pas paginya','Uang & Ekonomi'],
+['Modal usaha kecil yang dimulai dari hasil patungan keluarga','Uang & Ekonomi'],
+['Utang teman yang ditagih lebih susah daripada ditagih bank','Uang & Ekonomi'],
+['Harga sembako naik yang baru disadari pas belanja bulanan','Uang & Ekonomi'],
+['Gaji UMR yang dibanding-bandingin sama biaya hidup kota besar','Uang & Ekonomi'],
+['Dompet digital yang saldo abis duluan sebelum sadar transaksinya buat apa','Uang & Ekonomi'],
+
+['Update aplikasi yang fiturnya makin ribet padahal cuma buat chat','Teknologi'],
+['Sinyal yang hilang pas lagi penting-pentingnya','Teknologi'],
+['AI yang katanya bisa gantiin kerjaan manusia tapi disuruh bikin caption masih aneh','Teknologi'],
+['Charger HP yang gampang ilang padahal cuma satu di rumah','Teknologi'],
+['Aplikasi belanja yang notifnya lebih rajin dari notif kerjaan','Teknologi'],
+['Voice note panjang yang didengerin sambil mikir-mikir intinya apa','Teknologi'],
+['WiFi tetangga yang jadi sumber kebahagiaan tanpa izin','Teknologi'],
+['Update sistem HP yang bikin lemot padahal katanya buat lebih cepat','Teknologi'],
+['Marketplace yang testimoni produknya nggak nyambung sama barang aslinya','Teknologi'],
+['Video call yang putus pas lagi ngomong hal penting','Teknologi'],
+['Aplikasi ojol yang argonya naik pas hujan turun','Teknologi'],
+['Spam telpon nomor nggak dikenal yang isinya tawaran kartu kredit','Teknologi'],
+['Galeri HP yang penuh duluan sebelum foto liburan diambil','Teknologi'],
+['Baterai HP yang habisnya lebih cepat dari janji orang','Teknologi'],
+
+['Ngabuburit yang niatnya nunggu adzan tapi ujungnya keliling cari jajan','Tradisi & Kepercayaan'],
+['Susah bangun sahur tapi gampang bangun kalau ada notifikasi diskon','Tradisi & Kepercayaan'],
+['Ceramah yang isinya nyentil tapi yang kena malah orang lain','Tradisi & Kepercayaan'],
+['Sesajen yang ditaruh di pojok rumah demi rasa aman batin','Tradisi & Kepercayaan'],
+['Ziarah kubur jelang lebaran yang jadi reuni dadakan keluarga besar','Tradisi & Kepercayaan'],
+['Hari baik buat acara yang dihitung lebih teliti dari jadwal kerja','Tradisi & Kepercayaan'],
+['Wayang yang ditonton sampai pagi padahal besok kerja','Tradisi & Kepercayaan'],
+['Tahlilan yang jadi momen ngumpul tetangga sekaligus ngalor ngidul','Tradisi & Kepercayaan'],
+['Petuah orang tua yang baru kerasa benar pas udah dewasa','Tradisi & Kepercayaan'],
+['Selamatan rumah baru yang tetangganya dateng lebih banyak dari yang diundang','Tradisi & Kepercayaan'],
+['Mitos pamali yang diturunkan tanpa penjelasan ilmiah tapi tetap dipatuhi','Tradisi & Kepercayaan'],
+['Khotbah yang durasinya jadi bahan obrolan sendiri abis acara','Tradisi & Kepercayaan'],
+
+['Healing yang ujungnya checkout barang bukan pulang dengan ketenangan','Gaya Hidup'],
+['Olahraga yang niatnya sehat tapi ujungnya foto OOTD doang','Gaya Hidup'],
+['Diet yang mulainya hari Senin tapi gagalnya hari Senin juga','Gaya Hidup'],
+['Skincare sepuluh langkah yang dibeli demi ikut tren bukan demi kulit','Gaya Hidup'],
+['Staycation yang isinya rebahan doang tapi tetap diupload sebagai liburan','Gaya Hidup'],
+['Self reward yang frekuensinya lebih sering dari gajian','Gaya Hidup'],
+['Kopi kekinian yang harganya lebih mahal dari makan siang','Gaya Hidup'],
+['Sesi gym yang fotonya lebih banyak dari repetisinya','Gaya Hidup'],
+['Gaya hidup minimalis yang dibahas panjang tapi barangnya tetap menumpuk','Gaya Hidup'],
+['Isu kesehatan mental yang jadi tren tapi giliran cerita asli dianggap lebay','Gaya Hidup'],
+['Glow up challenge yang standarnya beda-beda tapi semua pengen ikut','Gaya Hidup'],
+['Gaya hidup hemat ala konten yang ujungnya beli barang demi bikin kontennya','Gaya Hidup'],
+['Coffee shop yang jadi kantor kedua buat kerja remote','Gaya Hidup'],
+['Tren diet karbo yang langsung kalah pas ketemu nasi hangat','Gaya Hidup'],
+['Konten a day in my life yang hidupnya kelihatan lebih rapi dari aslinya','Gaya Hidup'],
+['Outfit kondangan yang lebih dipikirin daripada isi undangannya','Gaya Hidup'],
+
+['Logat daerah yang susah hilang walau udah lama tinggal di kota besar','Daerah & Budaya'],
+['Gunungkidul yang katanya panas tapi orangnya tetap betah pulang','Daerah & Budaya'],
+['Yogyakarta yang predikatnya kota pelajar tapi macetnya kayak kota metropolitan','Daerah & Budaya'],
+['Bahasa daerah yang istilahnya nggak ada terjemahan pasnya ke Bahasa Indonesia','Daerah & Budaya'],
+['Anak rantau yang baru kangen makanan kampung pas lagi di kota orang','Daerah & Budaya'],
+['Pasar tradisional yang tawar-menawarnya jadi seni tersendiri','Daerah & Budaya'],
+['Becak yang masih jadi transportasi andalan di sebagian kota kecil','Daerah & Budaya'],
+['Upacara adat yang prosesnya lebih panjang dari rapat kantor','Daerah & Budaya'],
+['Festival kampung yang panitianya itu-itu aja tiap tahun','Daerah & Budaya'],
+['Bahasa Jawa kasar dan halus yang salah pakai bisa bikin canggung','Daerah & Budaya'],
+['Wilayah pesisir yang punya istilah cuaca sendiri buat melaut','Daerah & Budaya'],
+['Kota kecil yang semua orang kenal semua orang','Daerah & Budaya'],
+['Wisata alam daerah yang baru rame pas viral di media sosial','Daerah & Budaya'],
+['Khas daerah yang dibawa jadi oleh-oleh wajib pas mudik','Daerah & Budaya'],
+['Anak daerah yang logatnya berubah pas balik dari kuliah di kota besar','Daerah & Budaya'],
+['Sebutan kampung yang dipakai buat menggambarkan apa pun yang sederhana','Daerah & Budaya'],
+
+['Gen Z yang kerja maunya healing tapi gajinya minta naik','Generasi'],
+['Boomer yang nge-share artikel hoax tapi captionnya nasihat bijak','Generasi'],
+['Milenial yang hidupnya dikejar cicilan dari motor sampai HP','Generasi'],
+['Gen Z yang resign cuma gara-gara nggak di-notice di rapat','Generasi'],
+['Boomer yang nelpon cuma buat nanya kamu lagi sibuk apa','Generasi'],
+['Milenial yang nostalgia chatting di warnet tapi sekarang ngeluh kalau wifi lambat','Generasi'],
+['Gen Alpha yang main gadget lebih jago dari orang tuanya','Generasi'],
+['Generasi sandwich yang nanggung dua arah sekaligus, ke atas dan ke bawah','Generasi'],
+['Boomer yang nggak percaya cuaca ekstrem itu bukan karena azab','Generasi'],
+['Milenial yang ngerasa tua duluan padahal umurnya masih kepala tiga','Generasi'],
+['Gen Z yang lebih nyaman curhat ke AI daripada ke orang tua','Generasi'],
+['Perbedaan cara generasi nabung, ada yang di bawah kasur ada yang di e-wallet','Generasi'],
+];
+
+const CODES = {
+  'Kesehatan':'KSH','Cinta & Asmara':'CIN','Sosial Media':'SOS','Sosial Politik':'POL',
+  'Keluarga':'KLG','Pertemanan':'TMN','Pekerjaan & Karier':'KRJ','Pendidikan':'DIK',
+  'Makanan':'MKN','Transportasi':'TRN','Uang & Ekonomi':'UNG','Teknologi':'TEK',
+  'Tradisi & Kepercayaan':'TRD','Gaya Hidup':'GYH','Daerah & Budaya':'DRH','Generasi':'GEN'
+};
+
+const CATEGORIES = [...new Set(TOPICS.map(t => t[1]))];
+
+/* ============ STATE ============ */
+let activeCats = new Set();
+let usedIdx = new Set();
+let currentTopicIdx = null;
+let spinning = false;
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ============ DOM ============ */
+const chipRow = document.getElementById('chipRow');
+const poolCountEl = document.getElementById('poolCount');
+const boardRow = document.getElementById('boardRow');
+const rowTopic = document.getElementById('rowTopic');
+const rowMeta = document.getElementById('rowMeta');
+const spinBtn = document.getElementById('spinBtn');
+const ticket = document.getElementById('ticket');
+const ticketCode = document.getElementById('ticketCode');
+const ticketTopic = document.getElementById('ticketTopic');
+const ticketBadge = document.getElementById('ticketBadge');
+const goWriteBtn = document.getElementById('goWriteBtn');
+const reSpinBtn = document.getElementById('reSpinBtn');
+const pinnedTopic = document.getElementById('pinnedTopic');
+document.getElementById('topicCount').textContent = TOPICS.length;
+
+/* ---- chips ---- */
+function renderChips(){
+  chipRow.innerHTML = '';
+  const allChip = document.createElement('button');
+  allChip.className = 'chip' + (activeCats.size === 0 ? ' active' : '');
+  allChip.textContent = 'Semua Jurusan';
+  allChip.addEventListener('click', () => { activeCats.clear(); renderChips(); updatePoolCount(); });
+  chipRow.appendChild(allChip);
+
+  CATEGORIES.forEach(cat => {
+    const c = document.createElement('button');
+    c.className = 'chip' + (activeCats.has(cat) ? ' active' : '');
+    c.textContent = cat;
+    c.addEventListener('click', () => {
+      if (activeCats.has(cat)) activeCats.delete(cat); else activeCats.add(cat);
+      renderChips(); updatePoolCount();
+    });
+    chipRow.appendChild(c);
+  });
+}
+function getPoolIndices(){
+  return TOPICS.map((_, i) => i).filter(i => activeCats.size === 0 || activeCats.has(TOPICS[i][1]));
+}
+function updatePoolCount(){
+  poolCountEl.textContent = getPoolIndices().length + ' topik';
+}
+renderChips(); updatePoolCount();
+
+/* ---- spin logic ---- */
+function pickTarget(){
+  const pool = getPoolIndices();
+  let avail = pool.filter(i => !usedIdx.has(i));
+  if (avail.length === 0){ usedIdx.clear(); avail = pool; }
+  if (avail.length > 1 && currentTopicIdx !== null){
+    const trimmed = avail.filter(i => i !== currentTopicIdx);
+    if (trimmed.length) avail = trimmed;
+  }
+  return avail[Math.floor(Math.random() * avail.length)];
+}
+function renderRow(idx, animate){
+  const [text, cat] = TOPICS[idx];
+  const code = CODES[cat] || '—';
+  if (animate){
+    boardRow.classList.remove('flip');
+    void boardRow.offsetWidth;
+    boardRow.classList.add('flip');
+    setTimeout(() => {
+      rowTopic.textContent = text;
+      rowMeta.textContent = code + ' · ' + cat.toUpperCase();
+    }, 90);
+  } else {
+    rowTopic.textContent = text;
+    rowMeta.textContent = code + ' · ' + cat.toUpperCase();
+  }
+}
+function revealCard(idx){
+  const [text, cat] = TOPICS[idx];
+  const code = CODES[cat] || '—';
+  const num = String(100 + Math.floor(Math.random() * 900));
+  ticketCode.textContent = 'No. ' + code + '-' + num;
+  ticketTopic.textContent = text;
+  ticketBadge.textContent = cat;
+  ticket.classList.add('show');
+}
+function spin(){
+  if (spinning) return;
+  const pool = getPoolIndices();
+  if (pool.length === 0) return;
+  spinning = true;
+  spinBtn.disabled = true;
+  spinBtn.textContent = 'MENGACAK...';
+  const target = pickTarget();
+
+  if (reducedMotion){
+    renderRow(target, false);
+    finishSpin(target);
+    return;
+  }
+
+  let steps = 26 + Math.floor(Math.random() * 6);
+  let delay = 70;
+  let count = 0;
+  function tick(){
+    count++;
+    const showTarget = count >= steps;
+    const idx = showTarget ? target : pool[Math.floor(Math.random() * pool.length)];
+    renderRow(idx, true);
+    if (showTarget){ finishSpin(target); return; }
+    delay = Math.min(delay * 1.085, 300);
+    setTimeout(tick, delay);
+  }
+  setTimeout(tick, delay);
+}
+function finishSpin(target){
+  spinning = false;
+  spinBtn.disabled = false;
+  spinBtn.textContent = 'ACAK TOPIK';
+  currentTopicIdx = target;
+  usedIdx.add(target);
+  revealCard(target);
+}
+spinBtn.addEventListener('click', spin);
+reSpinBtn.addEventListener('click', spin);
+
+goWriteBtn.addEventListener('click', () => {
+  if (currentTopicIdx === null) return;
+  const [text, cat] = TOPICS[currentTopicIdx];
+  pinnedTopic.innerHTML = 'Topik: <b>' + text + '</b> &nbsp;·&nbsp; ' + cat;
+  document.getElementById('timer-section').scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth' });
+});
+
+/* ============ POMODORO ============ */
+let writeDur = 25 * 60;
+let breakDur = 5 * 60;
+let phase = 'write';
+let remaining = writeDur;
+let timerId = null;
+let running = false;
+let cycles = 0;
+
+const timeDisplay = document.getElementById('timeDisplay');
+const phaseLabel = document.getElementById('phaseLabel');
+const panel = document.getElementById('panel');
+const startBtn = document.getElementById('startBtn');
+const resetBtn = document.getElementById('resetBtn');
+const skipBtn = document.getElementById('skipBtn');
+const writeChips = document.getElementById('writeChips').querySelectorAll('.dur-chip');
+const breakChips = document.getElementById('breakChips').querySelectorAll('.dur-chip');
+const cycleCountEl = document.getElementById('cycleCount');
+const cycleDots = document.getElementById('cycleDots');
+
+function fmt(s){
+  const m = Math.floor(s / 60).toString().padStart(2, '0');
+  const sec = (s % 60).toString().padStart(2, '0');
+  return m + ':' + sec;
+}
+function updateDisplay(){
+  timeDisplay.textContent = fmt(remaining);
+  phaseLabel.textContent = phase === 'write' ? 'SEDANG MENULIS' : 'ISTIRAHAT DULU';
+  panel.classList.toggle('phase-break', phase === 'break');
+}
+function beep(){
+  try{
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.frequency.value = 880;
+    o.type = 'sine';
+    o.connect(g); g.connect(ctx.destination);
+    g.gain.setValueAtTime(0.0001, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.5);
+    o.start();
+    o.stop(ctx.currentTime + 0.55);
+  } catch(e){ /* audio not available, fail silently */ }
+}
+function renderCycles(){
+  cycleCountEl.textContent = cycles;
+  cycleDots.innerHTML = '';
+  const shown = Math.min(cycles, 12);
+  for (let i = 0; i < Math.max(shown, 4); i++){
+    const d = document.createElement('div');
+    d.className = 'cycle-dot' + (i < cycles ? ' done' : '');
+    cycleDots.appendChild(d);
+  }
+}
+function tickTimer(){
+  remaining--;
+  if (remaining <= 0){
+    beep();
+    if (phase === 'write'){ cycles++; renderCycles(); phase = 'break'; remaining = breakDur; }
+    else { phase = 'write'; remaining = writeDur; }
+  }
+  updateDisplay();
+}
+function startTimer(){
+  if (running) return;
+  running = true;
+  startBtn.textContent = 'Pause';
+  timerId = setInterval(tickTimer, 1000);
+}
+function pauseTimer(){
+  running = false;
+  startBtn.textContent = 'Mulai';
+  clearInterval(timerId);
+}
+function resetTimer(){
+  pauseTimer();
+  remaining = phase === 'write' ? writeDur : breakDur;
+  updateDisplay();
+}
+function skipPhase(){
+  pauseTimer();
+  phase = phase === 'write' ? 'break' : 'write';
+  remaining = phase === 'write' ? writeDur : breakDur;
+  updateDisplay();
+}
+startBtn.addEventListener('click', () => running ? pauseTimer() : startTimer());
+resetBtn.addEventListener('click', resetTimer);
+skipBtn.addEventListener('click', skipPhase);
+
+function wireDurationChips(chips, isWrite){
+  chips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      chips.forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      const seconds = parseInt(chip.dataset.min, 10) * 60;
+      if (isWrite) writeDur = seconds; else breakDur = seconds;
+      if (!running && ((isWrite && phase === 'write') || (!isWrite && phase === 'break'))){
+        remaining = seconds;
+        updateDisplay();
+      }
+    });
+  });
+}
+wireDurationChips(writeChips, true);
+wireDurationChips(breakChips, false);
+
+renderCycles();
+updateDisplay();
+</script>
+</body>
+</html>
